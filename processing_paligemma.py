@@ -65,11 +65,11 @@ class PaliGemmaProcessor:
   def __call__(self, text: List[str], images: List[Image.Image], padding: str = "longest", truncation: bool = True) -> dict:
     assert len(images) == 1 and len(text) == 1, f"Received {len(images)} images for {len(text)} prompts."
 
-    pixel_values = process_image(images=images, size=self.image_size, resample=Image.Resampling.BICUBIC, rescale_factor=1/255.0, image_mean=IMAGENET_STANDARD_MEAN, image_std=IMAGENET_STANDARD_STD)
+    pixel_values = process_image(images=images, size=(self.image_size, self.image_size), resample=Image.Resampling.BICUBIC, rescale_factor=1/255.0, image_mean=IMAGENET_STANDARD_MEAN, image_std=IMAGENET_STANDARD_STD)
     pixel_values = np.stack(pixel_values, axis=0)
     pixel_values = torch.tensor(pixel_values)
 
-    input_strings = [add_image_tokens_to_prompt(prefix_prompt=prompt, bos_token=self.tokenizer.bos_token, image_seq_len=num_image_tokens, image_token=self.IMAGE_TOKEN) for prompt in text]
+    input_strings = [add_image_tokens_to_prompt(prefix_prompt=prompt, bos_token=self.tokenizer.bos_token, image_seq_len=self.num_image_tokens, image_token=self.IMAGE_TOKEN) for prompt in text]
     inputs = self.tokenizer(input_strings, return_tensors='pt', padding=padding, truncation=truncation)
     return_data = {"pixel_values": pixel_values, **inputs}
 

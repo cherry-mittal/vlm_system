@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from typing import Optional, Tuple
 
-class siglipVisionConfig:
+class SiglipVisionConfig:
 
   def __init__(self, hidden_size=768, intermediate_size=3072, num_hidden_layers=12, num_attention_heads=12, num_channels=3, image_size=224, patch_size=16,
                layer_norm_eps=1e-6, attention_dropout=0.0, num_image_tokens: int = None, **kwargs):
@@ -20,9 +20,9 @@ class siglipVisionConfig:
     self.num_image_tokens = num_image_tokens
 
 
-class siglipVisionEmbeddings(nn.Module):
+class SiglipVisionEmbeddings(nn.Module):
 
-  def __init__(self, config: siglipVisionConfig):
+  def __init__(self, config: SiglipVisionConfig):
     super().__init__()
     self.config = config
     self.embed_dim = config.hidden_size
@@ -47,31 +47,31 @@ class siglipVisionEmbeddings(nn.Module):
     embeddings = embeddings + self.position_embeddings(self.position_ids)
     return embeddings
 
-class siglipVisionEncoder(nn.Module):
+class SiglipEncoder(nn.Module):
 
-  def __init__(self, config: siglipVisionConfig):
+  def __init__(self, config: SiglipVisionConfig):
     super().__init__()
 
     self.config = config
-    self.layers = nn.ModuleList([siglipoVisionEncoderLayer(config) for _ in range(config.num_hidden_layers)])
+    self.layers = nn.ModuleList([SiglipEncoderLayer(config) for _ in range(config.num_hidden_layers)])
 
-  def forward(self, input_embeds: torch.Tensor) -> torch.Tensor:
-    hidden_states = input_embeds
+  def forward(self, inputs_embeds: torch.Tensor) -> torch.Tensor:
+    hidden_states = inputs_embeds
     for encoder_layer in self.layers:
       hidden_states = encoder_layer(hidden_states)
 
     return hidden_states
 
-class siglipVisionEncoderLayer(nn.Module):
+class SiglipEncoderLayer(nn.Module):
 
-  def __init__(self, config: siglipVisionConfig):
+  def __init__(self, config: SiglipVisionConfig):
     super().__init__()
 
     self.config = config
     self.embed_dim = config.hidden_size
-    self.attention = siglipAttention(config)
+    self.attention = SiglipAttention(config)
     self.norm1 = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_eps)
-    self.mlp = siglipMLP(config)
+    self.mlp = SiglipMLP(config)
     self.norm2 = nn.LayerNorm(self.embed_dim, eps=config.layer_norm_eps)
 
   def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
@@ -87,8 +87,8 @@ class siglipVisionEncoderLayer(nn.Module):
 
     return hidden_states
 
-class siglipAttention(nn.Module):
-  def __init__(self, config: siglipVisionConfig):
+class SiglipAttention(nn.Module):
+  def __init__(self, config: SiglipVisionConfig):
     super().__init__()
     self.config = config
     self.embed_dim = config.hidden_size
@@ -121,7 +121,7 @@ class siglipAttention(nn.Module):
     return attn_output, attn_weights
 
 
-class siglipMLP(nn.Module):
+class SiglipMLP(nn.Module):
 
   def __init__(self, config):
     super().__init__()
@@ -136,26 +136,26 @@ class siglipMLP(nn.Module):
     return hidden_states
 
 
-class siglipVisionTransformer(nn.Module):
+class SiglipVisionTransformer(nn.Module):
 
   def __init__(self, config):
     super().__init__()
     self.config = config
-    self.embeddings = siglipVisionEmbeddings(config)
-    self.encoder = siglipVisionEncoder(config)
+    self.embeddings = SiglipVisionEmbeddings(config)
+    self.encoder = SiglipEncoder(config)
     self.norm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
 
   def forward(self, pixel_values: torch.FloatTensor) -> torch.Tensor:
     hidden_state = self.embeddings(pixel_values)
-    last_hidden_state = self.encoder(inputs_embeds=hidden_states)
+    last_hidden_state = self.encoder(inputs_embeds=hidden_state)
     last_hidden_state = self.norm(last_hidden_state)
     return last_hidden_state
 
-class siglipModel(nn.Module):
-  def __init__(self, config: siglipVisionConfig):
+class SiglipVisionModel(nn.Module):
+  def __init__(self, config: SiglipVisionConfig):
     super().__init__()
     self.config = config
-    self.trans_model = siglipVisionTransformer(config)
+    self.trans_model = SiglipVisionTransformer(config)
 
   def forward(self, pixel_values) -> Tuple:
     return self.trans_model(pixel_values=pixel_values)

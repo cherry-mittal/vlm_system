@@ -3,7 +3,7 @@ import torch
 import fire
 
 from processing_paligemma import PaliGemmaProcessor
-from modeling_gemma_py import KVCache, PaliGemmaForConditionalGeneration
+from modeling_gemma import KVCache, PaliGemmaForConditionalGeneration
 from utils import load_hf_model
 
 def move_inputs_to_device(model_inputs: dict, device: str):
@@ -48,10 +48,11 @@ def test_inference(model: PaliGemmaForConditionalGeneration, processor: PaliGemm
 
         input_ids = next_token.unsqueeze(-1)
         attention_mask = torch.cat([attention_mask, torch.ones((1,1), device=input_ids.device)], dim=-1)
-        generated_tokens = torch.cat(generated_tokens, dim=-1)
-        decoded = processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+    
+    generated_tokens = torch.cat(generated_tokens, dim=-1)
+    decoded = processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
 
-        print(prompt + decoded)
+    print(prompt + decoded)
 
 def _sample_top_p(probs: torch.Tensor, p: float):
     probs_sort, probs_idx = torch.sort(probs, dim=-1, descending=True)
@@ -64,8 +65,8 @@ def _sample_top_p(probs: torch.Tensor, p: float):
     return next_token
 
 
-def main(model_path: str, prompt: str, image_file_path: str, max_tokens_to_generate: int = 100,
-         temperature: float = 0.8, top_p: float = 0.9, do_sample: bool = True, only_cpu: bool = False):
+def main(model_path: str = None, prompt: str = None, image_file_path: str = None, max_tokens_to_generate: int = 100,
+         temperature: float = 0.8, top_p: float = 0.9, do_sample: bool = False, only_cpu: bool = True):
     device = "cpu"
 
     if not only_cpu:
@@ -74,7 +75,8 @@ def main(model_path: str, prompt: str, image_file_path: str, max_tokens_to_gener
         elif torch.backends.mps.is_available():
             device = "mps"
 
-    model, processor = load_hf_model(model_path, device)
+    print("Loading model")
+    model, tokenizer = load_hf_model(model_path, device)
     model = model.to(device).eval()
     
     num_image_tokens = model.config.vision_config.num_image_tokens
