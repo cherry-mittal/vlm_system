@@ -5,3 +5,5 @@ Image + Text-to-Text model from scratch using PaliGemma weights
 Created a caption writer using PaliGemma.
 
 
+Cherry Mittal
+cherry Mittal
